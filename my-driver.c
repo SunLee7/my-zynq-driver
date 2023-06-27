@@ -122,14 +122,14 @@ static int __init chrdev_init(void)
         printk(KERN_ERR "cdev_add failed\n");
         return -EINVAL;
     }
-    // // 创建/dev下的设备文件
-    // test_class = class_create(THIS_MODULE, "driver_class");
-    // if(IS_ERR(test_class))
-    // {
-    //     printk(KERN_ERR "class_create failed\n");
-    //     return -EINVAL;
-    // }
-    // device_create(test_class, NULL, dev_id, NULL, "my-first-driver");
+    // 创建/dev下的设备文件
+    test_class = class_create(THIS_MODULE, "driver_class");
+    if(IS_ERR(test_class))
+    {
+        printk(KERN_ERR "class_create failed\n");
+        return -EINVAL;
+    }
+    device_create(test_class, NULL, dev_id, NULL, "my-driver");
     
     // if(!request_mem_region(AXI_GPIO_BASE, ADDR_RANGE, "AXI_GPIO_BASE"))
     // {
@@ -169,8 +169,8 @@ static int __init chrdev_init(void)
 // 模块卸载函数
 static void __exit chrdev_exit(void)
 {
-    iounmap(AXI_GPIO_BASE);
-    release_mem_region(AXI_GPIO_BASE, ADDR_RANGE);
+    // iounmap(AXI_GPIO_BASE);
+    // release_mem_region(AXI_GPIO_BASE, ADDR_RANGE);
 
     device_destroy(test_class, dev_id);
     class_destroy(test_class);
