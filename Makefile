@@ -3,18 +3,19 @@
 #KERN_DIR = /lib/modules/$(KERN_VER)/build	
 		
 # 开发板的linux内核的源码树目录,根据自己在源码树存放的目录修改
-KERN_DIR = /home/sunlee/linux-xlnx
+KERN_DIR = /home/sunlee/phytium-linux-kernel
+BASEINCLUDE = $(KERN_DIR)
 
 # 设定处理器架构及编译器
-ARCH=arm
-CROSS_COMPILE=arm-linux-gnueabihf-
+ARCH=arm64
+CROSS_COMPILE=aarch64-linux-gnu- 
 
 # -m 表示我们要将my-first-drive.c编译成一个模块
 # -y表示我们要将my-first-drive.c编译链接进zImage
-obj-m	+= my-first-driver.o    
+obj-m	+= my-driver.o    
 
 all:
-	make -C $(KERN_DIR) M=`pwd` modules 
+	make -C $(KERN_DIR) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) M=`pwd` modules 
 # -C 表示进入到某一个目录下去编译
 # `pwd`：表示把两个`号中间的内容当成命令执行
 # M=`pwd`则表示把pwd打印的内容保存起来，目的是为了编译好了之后能够返回原来的目录
@@ -22,9 +23,9 @@ all:
 
 # 把编译出的模块拷贝到需要的地方
 cp:									
-	cp *.ko /home/sunlee/zynq-rootfs/home/root/  
+	cp *.ko /home/sunlee/my-zynq-driver/  
 
 # 把clean当成一个伪目标 只有'make clean'才会执行
 .PHONY: clean
 clean:
-	make -C $(KERN_DIR) M=`pwd` modules clean
+	make -C $(KERN_DIR) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) M=`pwd` modules clean
