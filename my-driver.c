@@ -16,7 +16,18 @@
 // ZYNQ PL axi_gpio 硬件地址
 #define AXI_GPIO_BASE 0x41200000
 #define ADDR_RANGE 0x10000
-static void __iomem *baseaddr;
+// static void __iomem *baseaddr;
+
+// E2000 GPIO base addr
+#define E2000_GPIO0 0x00028034000
+#define E2000_GPIO1 0x00028035000
+#define E2000_GPIO2 0x00028036000
+#define E2000_GPIO3 0x00028037000
+#define E2000_GPIO4 0x00028038000
+#define E2000_GPIO5 0x00028039000
+// 输出寄存器
+#define E2000_GPIO_SWPORTA_DR  0x00
+#define E2000_GPIO_SWPORTA_DDR 0x04
 
 // 设备相关
 static dev_t dev_id;
@@ -24,11 +35,47 @@ static struct cdev  *pcdev;
 static struct class *test_class;
 
 // 内核定时器
-static struct timer_list htim;
+struct timer_list htim;
 struct timeval oldtv;
 
 // GPIO
 #define LED1 502
+
+int my_gpio_write_with_ioremap(char port, char pin, char data)
+{
+    unsigned long gpio_base_addr;
+    void __iomem* remaped_addr;
+    unsigned int val;
+    switch(port)
+    {
+        case 0: gpio_base_addr = E2000_GPIO0; break;
+        case 1: gpio_base_addr = E2000_GPIO1; break;
+        case 2: gpio_base_addr = E2000_GPIO2; break;
+        case 3: gpio_base_addr = E2000_GPIO3; break;
+        case 4: gpio_base_addr = E2000_GPIO4; break;
+        case 5: gpio_base_addr = E2000_GPIO5; break;
+        default:
+            printk(KERN_INFO "GPIO PORT ERROR!\n");
+            return -EINVAL;
+    }
+    // if(!request_mem_region(gpio_base_addr, 0x1000, "GPIO_BASE"))
+    // {
+    //     printk(KERN_ERR "request_mem_region failed\n");
+    //     return -EINVAL;
+    // }
+    remaped_addr = ioremap(gpio_base_addr, 0x1000);
+    // 设置GPIO输出方向
+    val = readl(remaped_addr + E2000_GPIO_SWPORTA_DDR);
+    val |= (1 << pin);
+    writel(val, remaped_addr + E2000_GPIO_SWPORTA_DDR);
+    // 设置GPIO值
+    val = readl(remaped_addr + E2000_GPIO_SWPORTA_DR);
+    if(data) val |= (1 << pin);
+    else val &= ~(1 << pin);
+    writel(val, remaped_addr + E2000_GPIO_SWPORTA_DR);
+    iounmap(remaped_addr);
+    return 0;
+}
 
 void my_gpio_init(char port, char pin, char data)
 {
@@ -179,6 +226,7 @@ static ssize_t test_chrdev_write(struct file *file, const char __user *buf,	size
 {
     int ret = -1;
     int seg_data;
+    int flow_cnt = 0;
     printk(KERN_INFO "test_chrdev_write\n");
     //使用该函数将应用层的传过来的ubuf中的内容拷贝到驱动空间(内核空间)的一个buf中
     memset(kbuf, 0, sizeof(kbuf));
@@ -188,11 +236,11 @@ static ssize_t test_chrdev_write(struct file *file, const char __user *buf,	size
         return -EINVAL;//在真正的的驱动中没复制成功应该有一些纠错机制，这里我们简单点
     }
     printk(KERN_INFO "copy_from_user success..\n");
+    // 字符串转十进制整形
     kstrtoint(kbuf, 10, &seg_data);
+    // 数码管显示
     seg_display(seg_data);
-    //到这里我们就成功把用户空间的数据转移到内核空间了
-    //真正的驱动中，数据从应用层复制到驱动中后，我们就要根据这个数据去写硬件完成硬件的操作
-    //所以下面就应该是操作硬件的代码
+
     return 0;
 }
 
@@ -214,16 +262,18 @@ void timer_callback(struct timer_list *t)
 {
     struct timeval tv;
 
-    do_gettimeofday(&tv);
-    htim.expires = jiffies + 1 * HZ;
-    add_timer(&htim);
+    // do_gettimeofday(&tv);
+    // htim.expires = jiffies + 1 * HZ;
+    // add_timer(&htim);
+
+    mod_timer(&htim, jiffies + 1 * HZ);
 
     // printk(KERN_INFO "kernel timer hander\n");
     static u32 data = 0x01;
     if(data == 0x01) data = 0x00;
     else data = 0x01;
+    my_gpio_write_with_ioremap(5, 15, data);
     // writel(data, baseaddr);
-
 }
 
 //自定义一个file_operations结构体变量，并填充
@@ -265,28 +315,16 @@ static int __init chrdev_init(void)
         return -EINVAL;
     }
     device_create(test_class, NULL, dev_id, NULL, "my-driver");
-    
-    // if(!request_mem_region(AXI_GPIO_BASE, ADDR_RANGE, "AXI_GPIO_BASE"))
-    // {
-    //     printk(KERN_ERR "request_mem_region failed\n");
-    //     return -EINVAL;
-    // }
-    // baseaddr = ioremap(AXI_GPIO_BASE, ADDR_RANGE);
 
-    // 内核定时器初始化
-    timer_setup(&htim, timer_callback, 0);
+    // // 内核定时器初始化
+    // htim.expires = jiffies + 1 * HZ;
+    // timer_setup(&htim, timer_callback, 0);
+    // add_timer(&htim); /* 启动定时器 */
 
-    // // 设置AXI_GPIO为输出模式
-    // writel(0x00, baseaddr + 4);
-    // writel(0x01, baseaddr);
-
-    gpio_request(LED1,"LED1"); //申请gpio
-    gpio_direction_output(LED1, 1);//设置为输出方向并输出1
-    // gpio_direction_input(LED1); //设置为输入
-    gpio_set_value(LED1, 1);//只是设置输出值
-    // gpio_get_value(LED1);//获取值
     seg_init();
     seg_display(0);
+
+    // my_gpio_write_with_ioremap(5, 15, 0);
 
     return 0;
 }
