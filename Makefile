@@ -15,7 +15,7 @@ CROSS_COMPILE=aarch64-linux-gnu-
 obj-m	+= my-driver.o    
 
 all:
-	make -C $(KERN_DIR) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) M=`pwd` modules 
+	make -C $(KERN_DIR) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) M=`pwd` modules
 # -C 表示进入到某一个目录下去编译
 # `pwd`：表示把两个`号中间的内容当成命令执行
 # M=`pwd`则表示把pwd打印的内容保存起来，目的是为了编译好了之后能够返回原来的目录
