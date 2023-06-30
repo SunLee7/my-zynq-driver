@@ -36,7 +36,7 @@ static struct class *test_class;
 
 // 内核定时器
 struct timer_list htim;
-struct timeval oldtv;
+// struct timeval oldtv;
 
 // GPIO
 #define LED1 502
@@ -237,9 +237,9 @@ static ssize_t test_chrdev_write(struct file *file, const char __user *buf,	size
     }
     printk(KERN_INFO "copy_from_user success..\n");
     // 字符串转十进制整形
-    kstrtoint(kbuf, 10, &seg_data);
+    // kstrtoint(kbuf, 10, &seg_data);
     // 数码管显示
-    seg_display(seg_data);
+    // seg_display(seg_data);
 
     return 0;
 }
@@ -260,7 +260,7 @@ ssize_t test_chrdev_read(struct file *file, char __user *buf, size_t size, loff_
 // 定时器回调函数
 void timer_callback(struct timer_list *t)
 {
-    struct timeval tv;
+    // struct timeval tv;
 
     // do_gettimeofday(&tv);
     // htim.expires = jiffies + 1 * HZ;
@@ -321,8 +321,8 @@ static int __init chrdev_init(void)
     // timer_setup(&htim, timer_callback, 0);
     // add_timer(&htim); /* 启动定时器 */
 
-    seg_init();
-    seg_display(0);
+    // seg_init();
+    // seg_display(0);
 
     // my_gpio_write_with_ioremap(5, 15, 0);
 
@@ -335,10 +335,10 @@ static void __exit chrdev_exit(void)
     // iounmap(AXI_GPIO_BASE);
     // release_mem_region(AXI_GPIO_BASE, ADDR_RANGE);
     //释放gpio
-    gpio_free(LED1);
-    seg_deinit();
+    // gpio_free(LED1);
+    // seg_deinit();
     // 删除定时器
-    del_timer(&htim);
+    // del_timer(&htim);
 
     device_destroy(test_class, dev_id);
     class_destroy(test_class);

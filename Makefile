@@ -1,14 +1,14 @@
 #ubuntu的内核源码树，如果要编译在ubuntu中安装的模块就打开这2个
-#KERN_VER = $(shell uname -r)
-#KERN_DIR = /lib/modules/$(KERN_VER)/build	
+KERN_VER = $(shell uname -r)
+KERN_DIR = /lib/modules/$(KERN_VER)/build	
 		
 # 开发板的linux内核的源码树目录,根据自己在源码树存放的目录修改
-KERN_DIR = /home/sunlee/phytium-linux-kernel
-BASEINCLUDE = $(KERN_DIR)
+# KERN_DIR = /lib/modules/5.15.0-75-generic/build
+# BASEINCLUDE = $(KERN_DIR)
 
 # 设定处理器架构及编译器
-ARCH=arm64
-CROSS_COMPILE=aarch64-linux-gnu- 
+ARCH=x86_64
+CROSS_COMPILE=x86_64-linux-gnu-
 
 # -m 表示我们要将my-first-drive.c编译成一个模块
 # -y表示我们要将my-first-drive.c编译链接进zImage
